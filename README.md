@@ -33,7 +33,6 @@ This repository is organized as a reproducible research compendium. Future updat
 
         
 
-An `Rmd` notebook and associated pdf for the manuscript can be found in [analysis](/paper). This notebook produces a .pdf document in elsevier format.  
+A template `log.md` learners notebook for DSF can be found in [analysis/logs](https://github.com/ua-data7/DSF-template-compendium/tree/main/analysis). 
 
-README.md files are included in all subdirectories with explanations or contents related to the paper. It should also provide a useful starting point for extending and exploring these materials for other projects.
 
