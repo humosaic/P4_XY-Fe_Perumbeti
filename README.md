@@ -14,9 +14,8 @@ This repository is organized as a reproducible research compendium. Future updat
 
     analysis/
     |
-    ├── paper/
-    │   ├── paper.Rmd       # this is the main document to edit
-    │   └── paper.pdf       # this is an elsevier .pdf written from paper.Rmd
+    ├── logs/
+    │   └── log.md          # learning log for DSF
     |
     ├── figures/            # location of the figures produced for the manuscript
     |
