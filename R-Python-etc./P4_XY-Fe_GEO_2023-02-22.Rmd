@@ -1,0 +1,98 @@
+---
+# TItle: GEO Analysis
+output: html_notebook
+# Author: Ajay Perumbeti
+# Date: 2023-02-23
+# Description: Script for running transcriptome microarray from GEO datasets: 
+  # Passive Smoker dataset, GSE18044, 12 smokers, 64 non smokers
+  # Active Smoker Dataset, GSE 27272, 20 smokers, 52 non-smokers
+# Based on https://sbc.shef.ac.uk/geo_tutorial/tutorial.nb.html
+
+---
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+Install Packages
+```{r}
+#install packages
+install.packages("BiocManager")
+install.packages("forcats")
+install.packages("stringr")
+install.packages("ggplot2")
+install.packages("ggrepel")
+install.packages("readr")
+install.packages("tidyr")
+install.packages("survminer")
+BiocManager::install("GEOquery")
+BiocManager::install("limma")
+BiocManager::install("pheatmap")
+BiocManager::install("org.Hs.eg.db")
+```
+
+
+Importing the data
+We will assume that you already know the accession number (GSE….) for the dataset that you want to download.  The function to download a GEO dataset is getGEO from the GEOquery package. You have to specify the ID of the dataset that you want. 
+```{r}
+library(GEOquery)
+
+#Passive smoker dataset
+my_idPS <- "GSE18044"
+#Active Smoker Data set
+my_idAS <- "GSE27272"
+
+gsePS <- getGEO(my_idPS)
+gseAS <- getGEO(my_idAS)
+
+```
+
+Some datasets on GEO may be derived from different microarray platforms. Therefore the object gse is a list of different datasets. You can find out how many were used by checking the length of the gse object. Usually there will only be one platform and the dataset we want to analyse will be the first object in the list (gse[[1]]).  If more than one dataset is present, you can analyse the other dataset by changing the number inside the [[...]]
+## e.g. gse <- galse[[2]]
+Check how many platforms used
+```{r}
+length(gsePS)
+
+length(gseAS)
+
+gsePS <- gsePS[[1]]
+gsePS
+
+gseAS <- gseAS[[1]]
+```
+
+Check the normalisation and scales used.  For visualization and statistical analysis, we will inspect the data to discover what scale the data are presented in. The methods we will use assume the data are on a log2 scale; typically in the range of 0 to 16.
+The exprs function can retrieve the expression values as a data frame; with one column per-sample and one row per-gene.
+```{r}
+#Passive Smoking Dataset
+pData(gsePS) ## print the sample information
+fData(gsePS) ## print the gene annotation
+exprs(gsePS) ## print the expression data
+
+#Active Smoking Dataset
+pData(gseAS) ## print the sample information
+fData(gseAS) ## print the gene annotation
+exprs(gseAS) ## print the expression data
+```
+
+
+The summary function can then be used to print the distributions.
+```{r}
+## exprs get the expression levels as a data frame and get the distribution
+summary(exprs(gsePS))
+summary(exprs(gseAS))
+
+```
+
+If this output we clearly see that the values go beyond 16, so we will need to perform a log2
+transformation. A boxplot can also be generated to see if the data have been normalised. If so, the distributions of each sample should be highly similar.
+```{r}
+exprs(gsePS) <- log2(exprs(gsePS))
+boxplot(exprs(gsePS),outline=FALSE)
+
+exprs(gseAS) <- log2(exprs(gseAS))
+boxplot(exprs(gseAS),outline=FALSE)
+```
+
