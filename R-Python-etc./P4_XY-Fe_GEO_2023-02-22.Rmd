@@ -1,20 +1,14 @@
 ---
-# TItle: GEO Analysis
-output: html_notebook
-# Author: Ajay Perumbeti
-# Date: 2023-02-23
-# Description: Script for running transcriptome microarray from GEO datasets: 
-  # Passive Smoker dataset, GSE18044, 12 smokers, 64 non smokers
-  # Active Smoker Dataset, GSE 27272, 20 smokers, 52 non-smokers
-# Based on https://sbc.shef.ac.uk/geo_tutorial/tutorial.nb.html
-
+output:
+  word_document: default
+  html_notebook: default
+  pdf_document: default
 ---
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
 
 Install Packages
 ```{r}
@@ -32,10 +26,7 @@ BiocManager::install("limma")
 BiocManager::install("pheatmap")
 BiocManager::install("org.Hs.eg.db")
 ```
-
-
-Importing the data
-We will assume that you already know the accession number (GSE….) for the dataset that you want to download.  The function to download a GEO dataset is getGEO from the GEOquery package. You have to specify the ID of the dataset that you want. 
+Importing the data.  The function to download a GEO data-set is getGEO from GEOquery package.
 ```{r}
 library(GEOquery)
 
@@ -46,16 +37,13 @@ my_idAS <- "GSE27272"
 
 gsePS <- getGEO(my_idPS)
 gseAS <- getGEO(my_idAS)
-
 ```
-
-Some datasets on GEO may be derived from different microarray platforms. Therefore the object gse is a list of different datasets. You can find out how many were used by checking the length of the gse object. Usually there will only be one platform and the dataset we want to analyse will be the first object in the list (gse[[1]]).  If more than one dataset is present, you can analyse the other dataset by changing the number inside the [[...]]
+Some data-sets on GEO may be derived from different micro-array platforms. Therefore the object gse is a list of different data-sets. You can find out how many were used by checking the length of the gse object. Usually there will only be one platform and the dataset we want to analyse will be the first object in the list (gse[[1]]).  If more than one dataset is present, you can analyse the other dataset by changing the number inside the [[...]]
 ## e.g. gse <- galse[[2]]
 Check how many platforms used
 ```{r}
-length(gsePS)
-
-length(gseAS)
+print(length(gsePS))
+print(length(gseAS))
 
 gsePS <- gsePS[[1]]
 gsePS
@@ -95,4 +83,32 @@ boxplot(exprs(gsePS),outline=FALSE)
 exprs(gseAS) <- log2(exprs(gseAS))
 boxplot(exprs(gseAS),outline=FALSE)
 ```
+Inspect the clinical variables.  Data submitted to GEO contain sample labels assigned by the experimenters, and some information about the processing protocol. All these data can be extracted by the pData function.
+
+For your own data, you will have to decide which columns will be useful in the analysis.  This will include the column giving the main comparison(s) of interest and any potential confounding factors. In this particular data-set it looks like source_name_ch1 and characteristics_ch1.1.
+
+We can use the select function from dplyr to display just these columns of interest. At this stage it will also be useful to rename the columns to something more convenient using the rename function.
+
+
+```{r}
+library (dplyr)
+```
+```{r}
+sampleInfoPS <- pData(gsePS)
+print(sampleInfoPS)
+
+sampleInfoAS <- pData(gseAS)
+print(sampleInfoAS)
+```
+```{r}
+## source_name_ch1 and characteristics_ch1.1 seem to contain factors we might need for the analysis. Let's pick just those columns
+sampleInfoPS <- select(sampleInfoPS, source_name_ch1, characteristics_ch1.1)
+sampleInfoAS <- select(sampleInfoAS, source_name_ch1, characteristics_ch1.1)
+
+## Optionally, rename to more convenient column names
+sampleInfoPS <- rename(sampleInfoPS,group = source_name_ch1, patient=characteristics_ch1.1)
+sampleInfoAS <- rename(sampleInfoAS,group = source_name_ch1, patient=characteristics_ch1.1)
+```
+
+
 
