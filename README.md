@@ -1,5 +1,4 @@
-# Data Science Institute Data Science Fellows Template Research Compendium
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+# Project P4_XY-Fe_Perumbeti, Impact of Sex and Smoking on Iron Transport Expression in Placenta
 
 ## A compendium of code, data, and author's manuscript accompanying the manuscript:
 This repository is organized as a reproducible research compendium.
@@ -36,3 +35,6 @@ ACTIVE SMOKE-RELATED Dataset (27272)
 Comprehensive Study of Tobacco Smoke-Related Transcriptome Alterations in Maternal and Fetal Cells, Public on Apr 01, 2011, Series GSE27272
 
 Thank you to Dr. Bruchova for providing investigator annotation for placental sex for the samples.
+
+## Data Science Institute Data Science Fellows Template Research Compendium
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
