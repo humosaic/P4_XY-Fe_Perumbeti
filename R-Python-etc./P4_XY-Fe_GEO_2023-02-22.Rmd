@@ -1,16 +1,19 @@
 ---
 output:
   word_document: default
-  html_notebook: default
+  html_document: default
   pdf_document: default
 ---
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+#Project P4_xy-Fe_GEO_2023-02-22
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. 
+Title: P4_XY-Fe_GEO_2023-02-22
+Author: Ajay Perumbeti
+Description: Analysis of placental transcriptome microarray with pregnancies for differences in iron transport gene expression based on sex as well as no smoke exposure, passive smoke exposure, or active smoking.
+Datasets:   GEO GSE18044, passive smoker dataset; GEO GSE27272, active smoker dataset.
+Last Modified: 2023-02-25
+---
 
-Install Packages
+##Install Packages
 ```{r}
 #install packages
 install.packages("BiocManager")
@@ -26,7 +29,8 @@ BiocManager::install("limma")
 BiocManager::install("pheatmap")
 BiocManager::install("org.Hs.eg.db")
 ```
-Importing the data.  The function to download a GEO data-set is getGEO from GEOquery package.
+##Importing the data
+The function to download a GEO data-set is getGEO from GEOquery package.
 ```{r}
 library(GEOquery)
 
@@ -38,9 +42,8 @@ my_idAS <- "GSE27272"
 gsePS <- getGEO(my_idPS)
 gseAS <- getGEO(my_idAS)
 ```
-Some data-sets on GEO may be derived from different micro-array platforms. Therefore the object gse is a list of different data-sets. You can find out how many were used by checking the length of the gse object. Usually there will only be one platform and the dataset we want to analyse will be the first object in the list (gse[[1]]).  If more than one dataset is present, you can analyse the other dataset by changing the number inside the [[...]]
-## e.g. gse <- galse[[2]]
-Check how many platforms used
+##Check how many platforms used
+Some data-sets on GEO may be derived from different micro-array platforms. Therefore the object gse is a list of different data-sets. You can find out how many were used by checking the length of the gse object. Usually there will only be one platform and the dataset we want to analyse will be the first object in the list (gse[[1]]).  If more than one dataset is present, you can analyse the other dataset by changing the number inside the [[...]]  e.g. gse <- galse[[2]]
 ```{r}
 print(length(gsePS))
 print(length(gseAS))
@@ -49,9 +52,10 @@ gsePS <- gsePS[[1]]
 gsePS
 
 gseAS <- gseAS[[1]]
+gseAS
 ```
-
-Check the normalisation and scales used.  For visualization and statistical analysis, we will inspect the data to discover what scale the data are presented in. The methods we will use assume the data are on a log2 scale; typically in the range of 0 to 16.
+##Check the normalization and scales used.  
+For visualization and statistical analysis, inspect the data to discover what scale the data are presented in. The methods we will use assume the data are on a log2 scale; typically in the range of 0 to 16.
 The exprs function can retrieve the expression values as a data frame; with one column per-sample and one row per-gene.
 ```{r}
 #Passive Smoking Dataset
@@ -70,45 +74,152 @@ The summary function can then be used to print the distributions.
 ```{r}
 ## exprs get the expression levels as a data frame and get the distribution
 summary(exprs(gsePS))
+print('')
 summary(exprs(gseAS))
 
 ```
-
-If this output we clearly see that the values go beyond 16, so we will need to perform a log2
-transformation. A boxplot can also be generated to see if the data have been normalised. If so, the distributions of each sample should be highly similar.
+###log2 Transformation
+In the output we clearly see that the values go beyond 16, so we will need to perform a log2
+transformation. A boxplot can also be generated to see if the data have been normalized. If so, the distributions of each sample should be highly similar.
 ```{r}
 exprs(gsePS) <- log2(exprs(gsePS))
+exprs(gsePS)
+summary(exprs(gsePS))
 boxplot(exprs(gsePS),outline=FALSE)
 
 exprs(gseAS) <- log2(exprs(gseAS))
+exprs(gseAS)
+summary(exprs(gseAS))
 boxplot(exprs(gseAS),outline=FALSE)
 ```
-Inspect the clinical variables.  Data submitted to GEO contain sample labels assigned by the experimenters, and some information about the processing protocol. All these data can be extracted by the pData function.
+###Inspect the clinical variables.  
+Data submitted to GEO contain sample labels assigned by experimenters, and some information about the processing protocol. All these data can be extracted by the pData function.
 
-For your own data, you will have to decide which columns will be useful in the analysis.  This will include the column giving the main comparison(s) of interest and any potential confounding factors. In this particular data-set it looks like source_name_ch1 and characteristics_ch1.1.
+Have to decide which columns will be useful in the analysis.  This will include the column giving the main comparison(s) of interest and any potential confounding factors. To start we can try source_name_ch1 and characteristics_ch1.1.
 
-We can use the select function from dplyr to display just these columns of interest. At this stage it will also be useful to rename the columns to something more convenient using the rename function.
-
-
+We can use the select function from dplyr to display just these columns of interest. 
 ```{r}
 library (dplyr)
-```
-```{r}
+
 sampleInfoPS <- pData(gsePS)
 print(sampleInfoPS)
 
 sampleInfoAS <- pData(gseAS)
 print(sampleInfoAS)
 ```
+###Select Columns for Dataframe (Can select multiple columns if you choose by adding arguements)
 ```{r}
 ## source_name_ch1 and characteristics_ch1.1 seem to contain factors we might need for the analysis. Let's pick just those columns
-sampleInfoPS <- select(sampleInfoPS, source_name_ch1, characteristics_ch1.1)
-sampleInfoAS <- select(sampleInfoAS, source_name_ch1, characteristics_ch1.1)
-
+sampleInfoPSselect <- select(sampleInfoPS, characteristics_ch1.1)
+sampleInfoASselect <- select(sampleInfoAS, characteristics_ch1.1)
+```
+###Renaming Selected Column(s) for Dataframe
+At this stage it can be useful to rename the columns to something more convenient using the rename function.
+```{r}
 ## Optionally, rename to more convenient column names
-sampleInfoPS <- rename(sampleInfoPS,group = source_name_ch1, patient=characteristics_ch1.1)
-sampleInfoAS <- rename(sampleInfoAS,group = source_name_ch1, patient=characteristics_ch1.1)
+sampleInfoPSselect <- rename(sampleInfoPSselect, group=characteristics_ch1.1)
+print(sampleInfoPSselect)
+sampleInfoASselect <- rename(sampleInfoASselect, group=characteristics_ch1.1)
+print(sampleInfoASselect)
+```
+##Sample Clustering and Principal Components Analysis
+Unsupervised analysis can help understand sources of variation in the data.  It can also identify outlier samples.
+The function 'cor' can calculate the correlation (on a scale of 0-1) in a pairwise fashion between all samples.  This can be then visualized on a heatmap.  Among the many options for creating heatmaps in R, the pheatmap library is popular.  The only arguement it requires is a matrix of numerical values(sucah as the correlation matrix)
+```{r}
+library(pheatmap)
+##argument use="c" stops an error if there are any missing data points
+corMatrixPS <- cor (exprs(gsePS),use="c")
+print(pheatmap(corMatrixPS))
+corMatrixAS <- cor (exprs(gseAS),use="c")
+print(pheatmap(corMatrixAS))
+```
+##Ensure Row Name of Dataframe matches columns of correlation matrix
+We can incorporate sample information into the plot to try and understand the clustering.  We have already created a dataframe previously (sampleInfoAS and sampleInfoPS).  However, we need to take care that the row names of these data match the columns of the correlation matrix.
+```{r}
+#Print the row names of the sample information and check it matches the correlation matrix
+print(rownames(sampleInfoPS))
+print('')
+print(colnames(corMatrixPS))
+print('')
+print(rownames(sampleInfoAS))
+print('')
+print(colnames(corMatrixAS))
+```
+###Matching rownames in the dataframe to columns in the matrix
+If required, I can force the rownames to match the columns
+rownames(sampleInfoPS) <- colnames(corMatrixPS)
+pheatmap(corMatrixPS,
+        annotation_col=sampleInfoPS)  
+rownames(sampleInfoAS) <- colnames(corMatrixAS)
+pheatmap(corMatrixAS,
+        annotation_col=sampleInfoAS)  
+###Generate Heatmap with selected sampleInfo dataframe key
+```{r}
+pheatmap(corMatrixPS)
+pheatmap(corMatrixAS)
+pheatmap(corMatrixPS, annotation_col=sampleInfoPSselect)
+pheatmap(corMatrixAS, annotation_col=sampleInfoASselect)
+```
+###Principal Component Analysis (PCA)
+A complementary approach is to use Principal Components Analysis (PCA). There is a nice explanation in this youtube video.
+https://www.youtube.com/watch?v=0Jp4gsfOLMs.  
+
+It is important to transpose the expression matrix, otherwise R will try and compute PCA on the genes (instead of samples) and quickly run out of memory.  As PCA is an unsupervised method, the known sample groups are not taken into account. However, we can add labels when we plot the results. The ggplot2 package is particularly convenient for this. The ggrepel package can be used to position the text labels more cleverly so they can be read.
+
+e.g. Join the PCs to the sample information
+cbind(sampleInfo, pca$x) %>% 
+ggplot(aes(x = PC1, y=PC2, col=group,label=paste("Patient", patient))) + geom_point() + geom_text_repel()
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+## MAKE SURE TO TRANSPOSE THE EXPRESSION MATRIX
+pca <- prcomp(t(exprs(gsePS)))
+
+## Join the PCs to the sample information
+#cbind(sampleInfoPSselect, pca$x) %>% 
+#ggplot(aes(x = PC1, y=PC2, col=group, label=paste("Title", title))) + geom_point() + geom_text_repel()
+```
+###Dealing with Batch Effects
+Nothing at this stage. Provided the experimental design is sensible (i.e. representatives from all samples groups are present in each batch) we can correct for batch when we run the differential expression analysis.
+
+###Dealing with Outliers
+If we suspect some samples are outliers we can remove them for further analysis
+CODE Example to Deal with Outliers:
+Lets' say are outliers are samples 1,2 and 3
+replace 1,2,3 with the outliers in your dataset
+outlier_samples <- c(1,2,3)
+gse <- gse[,-outlier_samples]
+
+##Exporting Data
+
+
+##Differential Expression
+By far the most-popular package for performing differential expression is limma. The user-guide is extensive and covers the theory behind the analysis and many use-cases (Chapters 9 and 17 for single-channel data such as Illumina and Affymetrix)
+https://bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf
+
+Crucially, we have to allocate the samples in our dataset to the sample groups of interest. A useful function is model.matrix, which will create a design matrix from one of the columns in your sampleInfo. Here I choose sampleInfo$group.
+
+The design matrix is a matrix of 0 and 1s; one row for each sample and one column for each sample group. A 1 in a particular row and column indicates that a given sample (the row) belongs to a given group (column).
+
+##Further Processing and Visualization of DE Results
+R and Bioconductor have many packages for creating heatmaps. The most popular at the current time ComplexHeatmap and pheatmap (that we will use here).
+Creating the heatmap is pretty straightforward. There is a pheatmap function within the pheatmap library, and it just needs to know the matrix of values that you want to plot (say gene_matrix):-
+```{r}
+library(pheatmap)
 ```
 
+##Filtering and Exporting Results Table
 
+##Further Visualization
 
+###Heatmaps of selected genes
+
+###Most Differentially Expressed Genes
+
+###User Defined Genes of Interest
+If you have your own list of genes (e.g. genes from a previous study). The %in% function is used to identify rows whose Symbol matches any member of my_genes. Here we create my_genes manually. 
+If you want to plot the genes belonging to a particular GO term, it might 6be more efficient to follow the section below.  Depending on the technology used, there might be multiple matches for a particular gene; so we could end up with more IDs than genes. 
+
+Therefore we repeat the filtering put pull the Symbol column to make sure we can label the rows of the heatmap.
